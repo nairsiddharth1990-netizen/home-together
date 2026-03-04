@@ -11,47 +11,39 @@
   <meta name="apple-mobile-web-app-title" content="Home Together" />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-
-  <!-- React + Babel for standalone use (no build step needed) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body, #root { height: 100%; }
-    body { font-family: 'Georgia', serif; background: #FAF7F2; color: #1a1a1a; -webkit-tap-highlight-color: transparent; }
+    body { font-family: Georgia, serif; background: #FAF7F2; color: #1a1a1a; -webkit-tap-highlight-color: transparent; }
     @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(12px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
-    .task-card { animation: slideDown 0.18s ease; transition: box-shadow 0.15s; }
+    .task-card { animation: slideDown 0.18s ease; }
     .btn { cursor: pointer; border: none; transition: filter 0.15s; }
     .btn:active { filter: brightness(0.88); }
     .pill { cursor: pointer; transition: opacity 0.12s; }
-    .pill:active { opacity: 0.7; }
-    .check-btn { cursor: pointer; transition: transform 0.18s; }
-    .check-btn:active { transform: scale(1.2); }
+    .check-btn { cursor: pointer; }
     input, select { outline: none; -webkit-appearance: none; appearance: none; }
-    input:focus { box-shadow: 0 0 0 2px #3B5BDB44; }
     .overdue-pulse { animation: pulse 1.8s ease-in-out infinite; }
     ::-webkit-scrollbar { display: none; }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
-    .modal-sheet { background: white; border-radius: 22px 22px 0 0; padding: 26px 22px env(safe-area-inset-bottom, 24px); width: 100%; max-width: 640px; animation: slideUp 0.22s ease; max-height: 92vh; overflow-y: auto; }
-    .safe-bottom { padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+    .modal-sheet { background: white; border-radius: 22px 22px 0 0; padding: 26px 22px 36px; width: 100%; max-width: 640px; animation: slideUp 0.22s ease; max-height: 92vh; overflow-y: auto; }
   </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
 const PEOPLE = ["Sid", "Nikku"];
 const COLORS = {
-  You:  { bg: "#3B5BDB", light: "#E7F0FF", text: "#3B5BDB" },
-  Wife: { bg: "#E64980", light: "#FFE8F0", text: "#E64980" },
+  Sid:   { bg: "#3B5BDB", light: "#E7F0FF", text: "#3B5BDB" },
+  Nikku: { bg: "#E64980", light: "#FFE8F0", text: "#E64980" },
 };
 const CATEGORIES = ["🍳 Kitchen","🧹 Cleaning","🛒 Shopping","🌿 Garden","🐾 Pets","📦 Admin","🔧 Repairs","Other"];
 const RECURRENCE = ["once","daily","weekly","monthly"];
@@ -63,69 +55,65 @@ function getDueLabel(dueAt) {
   if (!dueAt) return null;
   const diff = dueAt - Date.now();
   const days = Math.ceil(diff / 86400000);
-  if (days < 0)  return { label: `${Math.abs(days)}d overdue`, color: "#E63946", urgent: true };
+  if (days < 0)   return { label: Math.abs(days) + "d overdue", color: "#E63946", urgent: true };
   if (days === 0) return { label: "Due today",    color: "#FF6B35", urgent: true };
   if (days === 1) return { label: "Due tomorrow", color: "#F4A261", urgent: false };
-  return { label: `Due in ${days}d`, color: "#999", urgent: false };
+  return { label: "Due in " + days + "d", color: "#999", urgent: false };
 }
 function getAgeLabel(ts) {
   const d = Math.floor((Date.now() - ts) / 86400000);
-  if (d === 0) return "Today"; if (d === 1) return "Yesterday"; return `${d}d ago`;
+  if (d === 0) return "Today";
+  if (d === 1) return "Yesterday";
+  return d + "d ago";
 }
-function dateStr(offset = 0) {
-  return new Date(Date.now() + offset * 86400000).toISOString().split("T")[0];
+function dateStr(offset) {
+  return new Date(Date.now() + (offset||0) * 86400000).toISOString().split("T")[0];
 }
-function loadTasks() {
-  try { return JSON.parse(localStorage.getItem("ht_tasks") || "null"); } catch { return null; }
-}
-function saveTasks(tasks) {
-  try { localStorage.setItem("ht_tasks", JSON.stringify(tasks)); } catch {}
-}
-
-function nextWeekday(dayOfWeek) {
-  // dayOfWeek: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-  const today = new Date();
-  const todayDay = today.getDay();
-  let daysAhead = (dayOfWeek - todayDay + 7) % 7;
-  if (daysAhead === 0) daysAhead = 7;
-  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysAhead, 21, 0, 0);
-  return d.getTime();
+function nextWeekday(dow) {
+  const t = new Date();
+  let ahead = (dow - t.getDay() + 7) % 7;
+  if (ahead === 0) ahead = 7;
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate() + ahead, 21, 0, 0).getTime();
 }
 function nextMonthDay(day) {
-  const today = new Date();
-  let d = new Date(today.getFullYear(), today.getMonth(), day, 9, 0, 0);
-  if (d <= today) d = new Date(today.getFullYear(), today.getMonth() + 1, day, 9, 0, 0);
+  const t = new Date();
+  let d = new Date(t.getFullYear(), t.getMonth(), day, 9, 0, 0);
+  if (d <= t) d = new Date(t.getFullYear(), t.getMonth() + 1, day, 9, 0, 0);
   return d.getTime();
 }
-
-const DEFAULT_TASKS = [
-  { id:1, title:"Do the dishes",      category:"🍳 Kitchen",  assignee:"Sid",   done:false, recurring:"daily",   createdAt:Date.now()-86400000,  dueAt:Date.now()-3600000, lastReset:null },
-  { id:2, title:"Vacuum living room", category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now()-172800000, dueAt:new Date(dateStr(3)+"T23:59:00").getTime(), lastReset:null },
-  { id:3, title:"Buy groceries",      category:"🛒 Shopping", assignee:"Sid",   done:true,  recurring:"weekly",  createdAt:Date.now()-259200000, dueAt:new Date(dateStr(1)+"T23:59:00").getTime(), lastReset:null },
-  { id:4, title:"Take out trash",     category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now(),           dueAt:nextWeekday(3), lastReset:null },
-  { id:5, title:"Do the laundry",     category:"🧹 Cleaning", assignee:"Sid",   done:false, recurring:"weekly",  createdAt:Date.now(),           dueAt:new Date(dateStr(7)+"T23:59:00").getTime(), lastReset:null },
-  { id:6, title:"Clean the freezer",  category:"🍳 Kitchen",  assignee:"Nikku", done:false, recurring:"monthly", createdAt:Date.now(),           dueAt:nextMonthDay(10), lastReset:null },
-];
+function loadTasks() {
+  try { return JSON.parse(localStorage.getItem("ht_tasks") || "null"); } catch(e) { return null; }
+}
+function saveTasks(t) {
+  try { localStorage.setItem("ht_tasks", JSON.stringify(t)); } catch(e) {}
+}
+function makeDefaults() {
+  return [
+    { id:1, title:"Do the dishes",      category:"🍳 Kitchen",  assignee:"Sid",   done:false, recurring:"daily",   createdAt:Date.now(), dueAt:Date.now()-3600000,                                lastReset:null },
+    { id:2, title:"Vacuum living room", category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:new Date(dateStr(3)+"T23:59:00").getTime(),         lastReset:null },
+    { id:3, title:"Buy groceries",      category:"🛒 Shopping", assignee:"Sid",   done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:new Date(dateStr(1)+"T23:59:00").getTime(),         lastReset:null },
+    { id:4, title:"Take out trash",     category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:nextWeekday(3),                                     lastReset:null },
+    { id:5, title:"Do the laundry",     category:"🧹 Cleaning", assignee:"Sid",   done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:new Date(dateStr(7)+"T23:59:00").getTime(),         lastReset:null },
+    { id:6, title:"Clean the freezer",  category:"🍳 Kitchen",  assignee:"Nikku", done:false, recurring:"monthly", createdAt:Date.now(), dueAt:nextMonthDay(10),                                   lastReset:null },
+  ];
+}
 
 function App() {
-  const [tasks, setTasks]           = useState(() => loadTasks() || DEFAULT_TASKS);
-  const [filter, setFilter]         = useState("All");
-  const [showDone, setShowDone]     = useState(false);
-  const [addOpen, setAddOpen]       = useState(false);
+  const [tasks,       setTasks]       = useState(() => loadTasks() || makeDefaults());
+  const [filter,      setFilter]      = useState("All");
+  const [showDone,    setShowDone]    = useState(false);
+  const [addOpen,     setAddOpen]     = useState(false);
+  const [resetOpen,   setResetOpen]   = useState(false);
   const [notifStatus, setNotifStatus] = useState("default");
-  const [form, setForm]             = useState({ title:"", category:CATEGORIES[0], assignee:PEOPLE[0], recurring:"once", dueDate:"" });
-  const [nextId, setNextId]         = useState(() => { const t = loadTasks(); return t ? Math.max(...t.map(x=>x.id))+1 : 10; });
-  const [celebrate, setCelebrate]   = useState(null);
-  const [toast, setToast]           = useState(null);
+  const [form,        setForm]        = useState({ title:"", category:CATEGORIES[0], assignee:PEOPLE[0], recurring:"once", dueDate:"" });
+  const [nextId,      setNextId]      = useState(() => { const t = loadTasks(); return t ? Math.max(...t.map(x => x.id)) + 1 : 10; });
+  const [celebrate,   setCelebrate]   = useState(null);
+  const [toast,       setToast]       = useState(null);
   const notifRef = useRef(null);
 
-  // Persist tasks
   useEffect(() => { saveTasks(tasks); }, [tasks]);
-
-  // Notification permission
   useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
 
-  // Auto-reset recurring tasks
   useEffect(() => {
     const iv = setInterval(() => {
       setTasks(prev => {
@@ -134,11 +122,9 @@ function App() {
           if (!task.done || task.recurring === "once") return task;
           const ms = getRecurrenceMs(task.recurring);
           if (!ms) return task;
-          const resetTime = (task.lastReset || task.createdAt) + ms;
-          if (Date.now() >= resetTime) {
+          if (Date.now() >= (task.lastReset || task.createdAt) + ms) {
             changed = true;
-            showToast(`🔁 "${task.title}" reset for ${task.assignee}`);
-            return { ...task, done:false, lastReset:Date.now(), dueAt: task.dueAt ? task.dueAt + ms : null };
+            return { ...task, done: false, lastReset: Date.now(), dueAt: task.dueAt ? task.dueAt + ms : null };
           }
           return task;
         });
@@ -148,37 +134,27 @@ function App() {
     return () => clearInterval(iv);
   }, []);
 
-  // Push notifications
   useEffect(() => {
     if (notifStatus !== "granted") return;
     if (notifRef.current) clearInterval(notifRef.current);
-    const fire = () => {
-      tasks.filter(t => !t.done && t.dueAt && t.dueAt <= Date.now() + 86400000).forEach(task => {
-        const due = getDueLabel(task.dueAt);
-        if (due?.urgent) {
-          new Notification("🏠 Home Together", {
-            body: `"${task.title}" — ${due.label} · ${task.assignee}`,
-            tag: `task-${task.id}`,
-            icon: "icon-192.png",
-          });
-        }
-      });
-    };
+    const fire = () => tasks.filter(t => !t.done && t.dueAt && t.dueAt <= Date.now() + 86400000).forEach(task => {
+      const due = getDueLabel(task.dueAt);
+      if (due && due.urgent) new Notification("🏠 Home Together", { body: '"' + task.title + '" — ' + due.label + ' · ' + task.assignee, tag: "task-" + task.id });
+    });
     fire();
     notifRef.current = setInterval(fire, 3600000);
     return () => clearInterval(notifRef.current);
   }, [notifStatus, tasks]);
 
-  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3200); }
+  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000); }
 
-  async function requestNotifications() {
-    if (!("Notification" in window)) { showToast("Notifications not supported in this browser"); return; }
-    const p = await Notification.requestPermission();
-    setNotifStatus(p);
-    if (p === "granted") {
-      showToast("🔔 Reminders enabled!");
-      new Notification("🏠 Home Together", { body: "You'll be reminded of due tasks!", tag:"welcome" });
-    } else { showToast("Notifications blocked — check browser settings"); }
+  function requestNotifs() {
+    if (!("Notification" in window)) { showToast("Not supported"); return; }
+    Notification.requestPermission().then(p => {
+      setNotifStatus(p);
+      if (p === "granted") { showToast("🔔 Reminders enabled!"); new Notification("🏠 Home Together", { body: "You'll be reminded of due tasks!" }); }
+      else showToast("Blocked — check browser settings");
+    });
   }
 
   function toggleDone(id) {
@@ -192,326 +168,196 @@ function App() {
   function addTask() {
     if (!form.title.trim()) return;
     const dueAt = form.dueDate ? new Date(form.dueDate + "T23:59:00").getTime() : null;
-    const task = { ...form, id: nextId, done: false, createdAt: Date.now(), dueAt, lastReset: null };
-    setTasks(prev => [...prev, task]);
-    setNextId(n => n+1);
+    setTasks(prev => [...prev, { ...form, id: nextId, done: false, createdAt: Date.now(), dueAt, lastReset: null }]);
+    setNextId(n => n + 1);
     setForm({ title:"", category:CATEGORIES[0], assignee:PEOPLE[0], recurring:"once", dueDate:"" });
     setAddOpen(false);
-    showToast(`✅ Added for ${form.assignee}`);
+    showToast("✅ Added for " + form.assignee);
   }
 
   function deleteTask(id) { setTasks(prev => prev.filter(t => t.id !== id)); }
 
-  const [resetOpen, setResetOpen] = useState(false);
   function resetToDefaults() {
     localStorage.removeItem("ht_tasks");
-    setTasks(DEFAULT_TASKS);
+    setTasks(makeDefaults());
     setNextId(10);
     setResetOpen(false);
-    showToast("\u2705 Tasks reset to defaults!");
+    showToast("✅ Reset to defaults!");
   }
 
-  const pending   = tasks.filter(t => !t.done);
-  const youP      = pending.filter(t => t.assignee === "Sid").length;
-  const wifeP     = pending.filter(t => t.assignee === "Nikku").length;
-  const overdue   = pending.filter(t => t.dueAt && t.dueAt < Date.now()).length;
-  const score     = { You: tasks.filter(t=>t.done&&t.assignee==="Sid").length, Wife: tasks.filter(t=>t.done&&t.assignee==="Nikku").length };
+  const pending = tasks.filter(t => !t.done);
+  const sidP    = pending.filter(t => t.assignee === "Sid").length;
+  const nikkuP  = pending.filter(t => t.assignee === "Nikku").length;
+  const overdue = pending.filter(t => t.dueAt && t.dueAt < Date.now()).length;
+  const score   = { Sid: tasks.filter(t => t.done && t.assignee==="Sid").length, Nikku: tasks.filter(t => t.done && t.assignee==="Nikku").length };
 
-  const filtered = tasks
-    .filter(t => {
-      if (!showDone && t.done) return false;
-      if (filter === "All") return true;
-      if (filter === "Sid" || filter === "Nikku") return t.assignee === filter;
-      if (filter === "⚠️ Overdue") return !t.done && t.dueAt && t.dueAt < Date.now();
-      return t.category === filter;
-    })
-    .sort((a,b) => {
-      if (a.done !== b.done) return a.done ? 1 : -1;
-      if (a.dueAt && b.dueAt) return a.dueAt - b.dueAt;
-      if (a.dueAt) return -1; if (b.dueAt) return 1;
-      return b.createdAt - a.createdAt;
-    });
+  const filtered = tasks.filter(t => {
+    if (!showDone && t.done) return false;
+    if (filter === "All") return true;
+    if (filter === "Sid" || filter === "Nikku") return t.assignee === filter;
+    if (filter === "Overdue") return !t.done && t.dueAt && t.dueAt < Date.now();
+    return t.category === filter;
+  }).sort((a,b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    if (a.dueAt && b.dueAt) return a.dueAt - b.dueAt;
+    if (a.dueAt) return -1; if (b.dueAt) return 1;
+    return b.createdAt - a.createdAt;
+  });
 
   return (
-    <div style={{ minHeight:"100vh", background:"#FAF7F2" }}>
+    <div style={{minHeight:"100vh",background:"#FAF7F2"}}>
 
-      {/* Confetti */}
-      {celebrate && (
-        <div style={{ position:"fixed", inset:0, pointerEvents:"none", zIndex:999, overflow:"hidden" }}>
-          {[...Array(22)].map((_,i) => (
-            <div key={i} style={{
-              position:"absolute", left:`${10+Math.random()*80}%`, top:"-12px",
-              width:`${6+Math.random()*8}px`, height:`${6+Math.random()*8}px`,
-              borderRadius: Math.random()>0.5?"50%":"2px",
-              background:["#3B5BDB","#E64980","#FCC419","#51CF66","#FF6B35","#cc5de8"][i%6],
-              animation:`fall ${0.7+Math.random()*0.6}s ease-in forwards`,
-              animationDelay:`${Math.random()*0.25}s`,
-            }} />
-          ))}
-        </div>
-      )}
+      {celebrate && <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{[...Array(20)].map((_,i)=><div key={i} style={{position:"absolute",left:(10+Math.random()*80)+"%",top:"-12px",width:(6+Math.random()*8)+"px",height:(6+Math.random()*8)+"px",borderRadius:Math.random()>0.5?"50%":"2px",background:["#3B5BDB","#E64980","#FCC419","#51CF66","#FF6B35"][i%5],animation:"fall "+(0.7+Math.random()*0.6)+"s ease-in forwards",animationDelay:(Math.random()*0.25)+"s"}} />)}</div>}
 
-      {/* Toast */}
-      {toast && (
-        <div style={{
-          position:"fixed", bottom:28, left:"50%", transform:"translateX(-50%)",
-          background:"#1a1a1a", color:"white", padding:"11px 20px", borderRadius:24,
-          fontSize:13, zIndex:500, whiteSpace:"nowrap", animation:"toastIn 0.25s ease",
-          boxShadow:"0 4px 20px rgba(0,0,0,0.25)"
-        }}>{toast}</div>
-      )}
+      {toast && <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:"#1a1a1a",color:"white",padding:"11px 20px",borderRadius:24,fontSize:13,zIndex:500,whiteSpace:"nowrap",animation:"toastIn 0.25s ease",boxShadow:"0 4px 20px rgba(0,0,0,0.25)"}}>{toast}</div>}
 
-      {/* Header */}
-      <div style={{ background:"#1a1a1a", color:"white", padding:"env(safe-area-inset-top, 16px) 20px 0", paddingTop:"max(env(safe-area-inset-top,0px), 16px)" }}>
-        <div style={{ maxWidth:640, margin:"0 auto" }}>
-
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10, flexWrap:"wrap" }}>
+      <div style={{background:"#1a1a1a",color:"white",padding:"16px 20px 0"}}>
+        <div style={{maxWidth:640,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
             <div>
-              <div style={{ fontSize:9, letterSpacing:"0.22em", textTransform:"uppercase", opacity:0.4, marginBottom:3 }}>Household</div>
-              <h1 style={{ fontSize:26, fontWeight:"normal", fontStyle:"italic" }}>Home Together</h1>
-              {overdue > 0 && (
-                <div className="overdue-pulse" style={{ marginTop:5, fontSize:11, color:"#E63946", letterSpacing:"0.08em" }}>
-                  ⚠ {overdue} task{overdue>1?"s":""} overdue
-                </div>
-              )}
+              <div style={{fontSize:9,letterSpacing:"0.22em",textTransform:"uppercase",opacity:0.4,marginBottom:3}}>Household</div>
+              <h1 style={{fontSize:26,fontWeight:"normal",fontStyle:"italic"}}>Home Together</h1>
+              {overdue > 0 && <div className="overdue-pulse" style={{marginTop:5,fontSize:11,color:"#E63946"}}>⚠ {overdue} task{overdue>1?"s":""} overdue</div>}
             </div>
-            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8 }}>
-              <button className="btn" onClick={requestNotifications} style={{
-                padding:"5px 11px", borderRadius:14, fontSize:10, fontFamily:"inherit",
-                background: notifStatus==="granted" ? "#51CF6622" : "#ffffff18",
-                color: notifStatus==="granted" ? "#51CF66" : "rgba(255,255,255,0.55)",
-                border:`1px solid ${notifStatus==="granted" ? "#51CF6644":"rgba(255,255,255,0.15)"}`,
-              }}>
-                {notifStatus==="granted" ? "🔔 Reminders ON" : notifStatus==="denied" ? "🔕 Blocked" : "🔔 Enable reminders"}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
+              <button className="btn" onClick={requestNotifs} style={{padding:"5px 11px",borderRadius:14,fontSize:10,fontFamily:"inherit",background:notifStatus==="granted"?"#51CF6622":"#ffffff18",color:notifStatus==="granted"?"#51CF66":"rgba(255,255,255,0.55)",border:"1px solid "+(notifStatus==="granted"?"#51CF6644":"rgba(255,255,255,0.15)")}}>
+                {notifStatus==="granted"?"🔔 Reminders ON":notifStatus==="denied"?"🔕 Blocked":"🔔 Enable reminders"}
               </button>
-              <div style={{ display:"flex", gap:8 }}>
+              <div style={{display:"flex",gap:8}}>
                 {PEOPLE.map(p => (
-                  <div key={p} style={{ background:COLORS[p].bg, borderRadius:10, padding:"8px 14px", textAlign:"center", minWidth:62 }}>
-                    <div style={{ fontSize:18, fontWeight:"bold", fontFamily:"monospace" }}>{pending.filter(t=>t.assignee===p).length}</div>
-                    <div style={{ fontSize:9, opacity:0.85, letterSpacing:"0.1em" }}>{p.toUpperCase()}</div>
-                    <div style={{ fontSize:9, opacity:0.55, marginTop:1 }}>{score[p]} done ✓</div>
+                  <div key={p} style={{background:COLORS[p].bg,borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:62}}>
+                    <div style={{fontSize:18,fontWeight:"bold",fontFamily:"monospace"}}>{pending.filter(t=>t.assignee===p).length}</div>
+                    <div style={{fontSize:9,opacity:0.85,letterSpacing:"0.1em"}}>{p.toUpperCase()}</div>
+                    <div style={{fontSize:9,opacity:0.55,marginTop:1}}>{score[p]} done ✓</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Balance bar */}
-          <div style={{ marginTop:14 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, opacity:0.3, marginBottom:4, letterSpacing:"0.1em" }}>
-              <span>SID — {youP}</span><span>NIKKU — {wifeP}</span>
-            </div>
-            <div style={{ height:3, background:"#333", borderRadius:2, overflow:"hidden", display:"flex" }}>
-              {(youP+wifeP)>0 ? (
-                <><div style={{ width:`${(youP/(youP+wifeP))*100}%`, background:COLORS.You.bg, transition:"width 0.4s" }} /><div style={{ flex:1, background:COLORS.Wife.bg }} /></>
-              ) : <div style={{ flex:1, background:"#51CF66" }} />}
+          <div style={{marginTop:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:9,opacity:0.3,marginBottom:4,letterSpacing:"0.1em"}}><span>SID — {sidP}</span><span>NIKKU — {nikkuP}</span></div>
+            <div style={{height:3,background:"#333",borderRadius:2,overflow:"hidden",display:"flex"}}>
+              {(sidP+nikkuP)>0 ? [<div key="s" style={{width:((sidP/(sidP+nikkuP))*100)+"%",background:COLORS.Sid.bg,transition:"width 0.4s"}} />,<div key="n" style={{flex:1,background:COLORS.Nikku.bg}} />] : <div style={{flex:1,background:"#51CF66"}} />}
             </div>
           </div>
 
-          {/* Filter pills */}
-          <div style={{ display:"flex", gap:5, marginTop:13, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
-            {["All","Sid","Nikku", overdue>0?"⚠️ Overdue":null].filter(Boolean).map(f => (
-              <button key={f} className="pill" onClick={() => setFilter(f)} style={{
-                padding:"5px 12px", borderRadius:18, fontSize:11, fontFamily:"inherit",
-                background: filter===f?"white":"transparent",
-                color: filter===f?"#1a1a1a": f==="⚠️ Overdue"?"#E63946":"rgba(255,255,255,0.5)",
-                border:`1px solid ${filter===f?"white":f==="⚠️ Overdue"?"#E6394644":"rgba(255,255,255,0.15)"}`,
-                whiteSpace:"nowrap",
-              }}>{f==="Sid"?"👤 Sid":f==="Nikku"?"💑 Nikku's":f}</button>
+          <div style={{display:"flex",gap:5,marginTop:13,overflowX:"auto",paddingBottom:12}}>
+            {["All","Sid","Nikku"].concat(overdue>0?["Overdue"]:[]).map(f => (
+              <button key={f} className="pill" onClick={()=>setFilter(f)} style={{padding:"5px 12px",borderRadius:18,fontSize:11,fontFamily:"inherit",background:filter===f?"white":"transparent",color:filter===f?"#1a1a1a":f==="Overdue"?"#E63946":"rgba(255,255,255,0.5)",border:"1px solid "+(filter===f?"white":f==="Overdue"?"#E6394644":"rgba(255,255,255,0.15)"),whiteSpace:"nowrap"}}>
+                {f==="Sid"?"👤 Sid":f==="Nikku"?"💑 Nikku":f==="Overdue"?"⚠️ Overdue":f}
+              </button>
             ))}
-            <div style={{ width:1, background:"rgba(255,255,255,0.1)", margin:"0 2px" }} />
+            <div style={{width:1,background:"rgba(255,255,255,0.1)",margin:"0 2px"}} />
             {CATEGORIES.slice(0,5).map(c => (
-              <button key={c} className="pill" onClick={() => setFilter(c)} style={{
-                padding:"5px 11px", borderRadius:18, fontSize:11, fontFamily:"inherit",
-                background:filter===c?"white":"transparent",
-                color:filter===c?"#1a1a1a":"rgba(255,255,255,0.4)",
-                border:`1px solid ${filter===c?"white":"rgba(255,255,255,0.1)"}`,
-                whiteSpace:"nowrap",
-              }}>{c}</button>
+              <button key={c} className="pill" onClick={()=>setFilter(c)} style={{padding:"5px 11px",borderRadius:18,fontSize:11,fontFamily:"inherit",background:filter===c?"white":"transparent",color:filter===c?"#1a1a1a":"rgba(255,255,255,0.4)",border:"1px solid "+(filter===c?"white":"rgba(255,255,255,0.1)"),whiteSpace:"nowrap"}}>{c}</button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Task list */}
-      <div style={{ maxWidth:640, margin:"0 auto", padding:"16px 18px 110px" }} className="safe-bottom">
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <div style={{ fontSize:12, color:"#bbb" }}>
-            {filtered.filter(t=>!t.done).length} pending{showDone?`, ${filtered.filter(t=>t.done).length} done`:""}
-          </div>
-          <button className="pill" onClick={() => setShowDone(v=>!v)} style={{
-            padding:"4px 11px", borderRadius:16, fontSize:11, fontFamily:"inherit",
-            background:showDone?"#e8e8e8":"transparent", color:"#999", border:"1px solid #e0e0e0",
-          }}>{showDone?"Hide done":"Show done"}</button>
+      <div style={{maxWidth:640,margin:"0 auto",padding:"16px 18px 110px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{fontSize:12,color:"#bbb"}}>{filtered.filter(t=>!t.done).length} pending{showDone?", "+filtered.filter(t=>t.done).length+" done":""}</div>
+          <button className="pill" onClick={()=>setShowDone(v=>!v)} style={{padding:"4px 11px",borderRadius:16,fontSize:11,fontFamily:"inherit",background:showDone?"#e8e8e8":"transparent",color:"#999",border:"1px solid #e0e0e0"}}>{showDone?"Hide done":"Show done"}</button>
         </div>
-
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {filtered.length === 0 && (
-            <div style={{ textAlign:"center", padding:"52px 0", color:"#ccc" }}>
-              <div style={{ fontSize:36, marginBottom:10 }}>✨</div>
-              <div style={{ fontSize:14 }}>Nothing here!</div>
-            </div>
-          )}
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {filtered.length===0 && <div style={{textAlign:"center",padding:"52px 0",color:"#ccc"}}><div style={{fontSize:36,marginBottom:10}}>✨</div><div style={{fontSize:14}}>Nothing here!</div></div>}
           {filtered.map(task => {
             const due = getDueLabel(task.dueAt);
-            const isOverdue = due?.urgent && task.dueAt < Date.now();
+            const isOvd = due && due.urgent && task.dueAt < Date.now();
+            const col = COLORS[task.assignee] || COLORS.Sid;
             return (
-              <div key={task.id} className="task-card" style={{
-                background: task.done?"#f5f5f5":"white",
-                borderRadius:14, padding:"13px 14px",
-                boxShadow: task.done?"none": isOverdue?"0 0 0 1.5px #E6394633, 0 2px 10px rgba(0,0,0,0.06)":"0 2px 10px rgba(0,0,0,0.06)",
-                display:"flex", alignItems:"center", gap:11,
-                opacity:task.done?0.55:1,
-              }}>
-                <button className="check-btn" onClick={() => toggleDone(task.id)} style={{
-                  width:26, height:26, borderRadius:"50%", flexShrink:0,
-                  background: task.done?COLORS[task.assignee].bg:"transparent",
-                  border:`2px solid ${task.done?COLORS[task.assignee].bg:isOverdue?"#E63946":"#d0d0d0"}`,
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                }}>{task.done && <span style={{ color:"white", fontSize:12 }}>✓</span>}</button>
-
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:14.5, fontWeight:500, textDecoration:task.done?"line-through":"none", marginBottom:3, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{task.title}</div>
-                  <div style={{ display:"flex", gap:5, flexWrap:"wrap", alignItems:"center" }}>
-                    <span style={{ fontSize:11, color:"#ccc" }}>{task.category}</span>
-                    {due && !task.done && (<><span style={{ color:"#ddd", fontSize:10 }}>·</span><span style={{ fontSize:11, color:due.color, fontWeight:due.urgent?600:400 }}>{due.urgent?"⚡ ":""}{due.label}</span></>)}
-                    {task.recurring!=="once" && (<><span style={{ color:"#ddd", fontSize:10 }}>·</span><span style={{ fontSize:10, background:"#f0f0f0", borderRadius:5, padding:"1px 6px", color:"#aaa" }}>🔁 {task.recurring}</span></>)}
-                    {!due && (<><span style={{ color:"#ddd", fontSize:10 }}>·</span><span style={{ fontSize:11, color:"#ccc" }}>{getAgeLabel(task.createdAt)}</span></>)}
+              <div key={task.id} className="task-card" style={{background:task.done?"#f5f5f5":"white",borderRadius:14,padding:"13px 14px",boxShadow:task.done?"none":isOvd?"0 0 0 1.5px #E6394633,0 2px 10px rgba(0,0,0,0.06)":"0 2px 10px rgba(0,0,0,0.06)",display:"flex",alignItems:"center",gap:11,opacity:task.done?0.55:1}}>
+                <button className="check-btn" onClick={()=>toggleDone(task.id)} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,background:task.done?col.bg:"transparent",border:"2px solid "+(task.done?col.bg:isOvd?"#E63946":"#d0d0d0"),display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  {task.done && <span style={{color:"white",fontSize:12}}>✓</span>}
+                </button>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14.5,fontWeight:500,textDecoration:task.done?"line-through":"none",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{task.title}</div>
+                  <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
+                    <span style={{fontSize:11,color:"#ccc"}}>{task.category}</span>
+                    {due && !task.done && <><span style={{color:"#ddd",fontSize:10}}>·</span><span style={{fontSize:11,color:due.color,fontWeight:due.urgent?600:400}}>{due.urgent?"⚡ ":""}{due.label}</span></>}
+                    {task.recurring!=="once" && <><span style={{color:"#ddd",fontSize:10}}>·</span><span style={{fontSize:10,background:"#f0f0f0",borderRadius:5,padding:"1px 6px",color:"#aaa"}}>🔁 {task.recurring}</span></>}
+                    {!due && <><span style={{color:"#ddd",fontSize:10}}>·</span><span style={{fontSize:11,color:"#ccc"}}>{getAgeLabel(task.createdAt)}</span></>}
                   </div>
                 </div>
-
-                <div style={{ background:COLORS[task.assignee].light, color:COLORS[task.assignee].text, borderRadius:8, padding:"3px 8px", fontSize:10, fontWeight:700, letterSpacing:"0.06em", flexShrink:0 }}>{task.assignee.toUpperCase()}</div>
-                <button className="btn" onClick={() => deleteTask(task.id)} style={{ width:22, height:22, borderRadius:"50%", background:"transparent", color:"#ccc", fontSize:15, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, padding:0 }}>×</button>
+                <div style={{background:col.light,color:col.text,borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:700,letterSpacing:"0.06em",flexShrink:0}}>{task.assignee.toUpperCase()}</div>
+                <button className="btn" onClick={()=>deleteTask(task.id)} style={{width:22,height:22,borderRadius:"50%",background:"transparent",color:"#ccc",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:0}}>×</button>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* FAB */}
-      <button className="btn" onClick={() => setAddOpen(true)} style={{
-        position:"fixed", bottom:"calc(24px + env(safe-area-inset-bottom, 0px))", right:22,
-        width:56, height:56, borderRadius:"50%", background:"#1a1a1a", color:"white",
-        fontSize:26, boxShadow:"0 4px 20px rgba(0,0,0,0.28)", display:"flex",
-        alignItems:"center", justifyContent:"center", zIndex:50,
-      }}>+</button>
+      <button className="btn" onClick={()=>setAddOpen(true)} style={{position:"fixed",bottom:28,right:22,width:56,height:56,borderRadius:"50%",background:"#1a1a1a",color:"white",fontSize:26,boxShadow:"0 4px 20px rgba(0,0,0,0.28)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50}}>+</button>
+      <button className="btn" onClick={()=>setResetOpen(true)} style={{position:"fixed",bottom:28,left:22,padding:"0 16px",height:42,borderRadius:21,background:"#f0f0f0",color:"#888",fontSize:12,fontFamily:"inherit",zIndex:50,boxShadow:"0 2px 10px rgba(0,0,0,0.1)"}}>↺ Reset</button>
 
-      {/* Reset button */}
-      <button className="btn" onClick={() => setResetOpen(true)} style={{
-        position:"fixed", bottom:"calc(24px + env(safe-area-inset-bottom, 0px))", left:22,
-        padding:"0 16px", height:42, borderRadius:21, background:"#f0f0f0", color:"#888",
-        fontSize:12, fontFamily:"inherit", zIndex:50, boxShadow:"0 2px 10px rgba(0,0,0,0.1)",
-      }}>↺ Reset</button>
-
-      {/* Add modal */}
       {addOpen && (
-        <div className="modal-overlay" onClick={e => e.target.classList.contains("modal-overlay") && setAddOpen(false)}>
+        <div className="modal-overlay" onClick={e=>e.target.classList.contains("modal-overlay")&&setAddOpen(false)}>
           <div className="modal-sheet">
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22 }}>
-              <h2 style={{ fontSize:19, fontStyle:"italic", fontWeight:"normal" }}>New task</h2>
-              <button className="btn" onClick={() => setAddOpen(false)} style={{ background:"#f0f0f0", borderRadius:"50%", width:30, height:30, fontSize:17, color:"#888" }}>×</button>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
+              <h2 style={{fontSize:19,fontStyle:"italic",fontWeight:"normal"}}>New task</h2>
+              <button className="btn" onClick={()=>setAddOpen(false)} style={{background:"#f0f0f0",borderRadius:"50%",width:30,height:30,fontSize:17,color:"#888"}}>×</button>
             </div>
-
-            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-              <input placeholder="What needs doing?" value={form.title}
-                onChange={e => setForm(f => ({ ...f, title:e.target.value }))}
-                onKeyDown={e => e.key==="Enter" && addTask()} autoFocus
-                style={{ padding:"12px 14px", borderRadius:11, border:"1.5px solid #e5e5e5", fontSize:15, fontFamily:"inherit", background:"#fafafa" }} />
-
-              <div style={{ display:"flex", gap:9 }}>
-                <select value={form.category} onChange={e => setForm(f=>({...f,category:e.target.value}))}
-                  style={{ flex:1, padding:"10px 11px", borderRadius:10, border:"1.5px solid #e5e5e5", fontSize:13, fontFamily:"inherit", background:"#fafafa" }}>
-                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <input placeholder="What needs doing?" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addTask()} autoFocus style={{padding:"12px 14px",borderRadius:11,border:"1.5px solid #e5e5e5",fontSize:15,fontFamily:"inherit",background:"#fafafa"}} />
+              <div style={{display:"flex",gap:9}}>
+                <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={{flex:1,padding:"10px 11px",borderRadius:10,border:"1.5px solid #e5e5e5",fontSize:13,fontFamily:"inherit",background:"#fafafa"}}>
+                  {CATEGORIES.map(c=><option key={c}>{c}</option>)}
                 </select>
-                <select value={form.recurring} onChange={e => setForm(f=>({...f,recurring:e.target.value}))}
-                  style={{ flex:1, padding:"10px 11px", borderRadius:10, border:"1.5px solid #e5e5e5", fontSize:13, fontFamily:"inherit", background:"#fafafa" }}>
-                  {RECURRENCE.map(r => <option key={r}>{r}</option>)}
+                <select value={form.recurring} onChange={e=>setForm(f=>({...f,recurring:e.target.value}))} style={{flex:1,padding:"10px 11px",borderRadius:10,border:"1.5px solid #e5e5e5",fontSize:13,fontFamily:"inherit",background:"#fafafa"}}>
+                  {RECURRENCE.map(r=><option key={r}>{r}</option>)}
                 </select>
               </div>
-
               <div>
-                <div style={{ fontSize:11, color:"#bbb", marginBottom:6, letterSpacing:"0.08em" }}>DUE DATE (optional)</div>
-                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                  {[{label:"Today",val:dateStr(0)},{label:"Tomorrow",val:dateStr(1)},{label:"In 3 days",val:dateStr(3)},{label:"In a week",val:dateStr(7)}].map(opt => (
-                    <button key={opt.val} className="pill" onClick={() => setForm(f=>({...f,dueDate:f.dueDate===opt.val?"":opt.val}))} style={{
-                      padding:"5px 11px", borderRadius:16, fontSize:11, fontFamily:"inherit",
-                      background:form.dueDate===opt.val?"#1a1a1a":"#f0f0f0",
-                      color:form.dueDate===opt.val?"white":"#666", border:"none",
-                    }}>{opt.label}</button>
+                <div style={{fontSize:11,color:"#bbb",marginBottom:6,letterSpacing:"0.08em"}}>DUE DATE (optional)</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {[{l:"Today",v:dateStr(0)},{l:"Tomorrow",v:dateStr(1)},{l:"In 3 days",v:dateStr(3)},{l:"In a week",v:dateStr(7)}].map(o=>(
+                    <button key={o.v} className="pill" onClick={()=>setForm(f=>({...f,dueDate:f.dueDate===o.v?"":o.v}))} style={{padding:"5px 11px",borderRadius:16,fontSize:11,fontFamily:"inherit",background:form.dueDate===o.v?"#1a1a1a":"#f0f0f0",color:form.dueDate===o.v?"white":"#666",border:"none"}}>{o.l}</button>
                   ))}
-                  <input type="date" value={form.dueDate} onChange={e => setForm(f=>({...f,dueDate:e.target.value}))}
-                    style={{ flex:1, minWidth:110, padding:"5px 10px", borderRadius:10, border:"1.5px solid #e5e5e5", fontSize:12, fontFamily:"inherit", background:"#fafafa" }} />
+                  <input type="date" value={form.dueDate} onChange={e=>setForm(f=>({...f,dueDate:e.target.value}))} style={{flex:1,minWidth:110,padding:"5px 10px",borderRadius:10,border:"1.5px solid #e5e5e5",fontSize:12,fontFamily:"inherit",background:"#fafafa"}} />
                 </div>
               </div>
-
               <div>
-                <div style={{ fontSize:11, color:"#bbb", marginBottom:6, letterSpacing:"0.08em" }}>ASSIGN TO</div>
-                <div style={{ display:"flex", gap:8 }}>
-                  {PEOPLE.map(p => (
-                    <button key={p} className="btn" onClick={() => setForm(f=>({...f,assignee:p}))} style={{
-                      flex:1, padding:"12px", borderRadius:11, fontSize:14, fontFamily:"inherit", fontWeight:600,
-                      background:form.assignee===p?COLORS[p].bg:COLORS[p].light,
-                      color:form.assignee===p?"white":COLORS[p].text, border:"none",
-                    }}>{p}</button>
+                <div style={{fontSize:11,color:"#bbb",marginBottom:6,letterSpacing:"0.08em"}}>ASSIGN TO</div>
+                <div style={{display:"flex",gap:8}}>
+                  {PEOPLE.map(p=>(
+                    <button key={p} className="btn" onClick={()=>setForm(f=>({...f,assignee:p}))} style={{flex:1,padding:"12px",borderRadius:11,fontSize:14,fontFamily:"inherit",fontWeight:600,background:form.assignee===p?COLORS[p].bg:COLORS[p].light,color:form.assignee===p?"white":COLORS[p].text,border:"none"}}>{p}</button>
                   ))}
                 </div>
               </div>
-
-              {form.recurring !== "once" && (
-                <div style={{ background:"#f8f4ff", borderRadius:10, padding:"10px 13px", fontSize:12, color:"#7c4dde", borderLeft:"3px solid #c084fc" }}>
-                  🔁 Resets every {form.recurring} after being marked done.
-                </div>
-              )}
-
-              <button className="btn" onClick={addTask} style={{
-                padding:"14px", borderRadius:13, background:"#1a1a1a", color:"white",
-                fontSize:15, fontFamily:"inherit", fontStyle:"italic",
-              }}>Add task →</button>
+              {form.recurring!=="once" && <div style={{background:"#f8f4ff",borderRadius:10,padding:"10px 13px",fontSize:12,color:"#7c4dde",borderLeft:"3px solid #c084fc"}}>🔁 Resets every {form.recurring} after being marked done.</div>}
+              <button className="btn" onClick={addTask} style={{padding:"14px",borderRadius:13,background:"#1a1a1a",color:"white",fontSize:15,fontFamily:"inherit",fontStyle:"italic"}}>Add task →</button>
             </div>
           </div>
         </div>
       )}
-    </div>
 
-      {/* Reset confirm modal */}
       {resetOpen && (
-        <div className="modal-overlay" onClick={e => e.target.classList.contains("modal-overlay") && setResetOpen(false)}>
-          <div className="modal-sheet" style={{ paddingBottom:32 }}>
-            <div style={{ textAlign:"center", padding:"8px 0 24px" }}>
-              <div style={{ fontSize:36, marginBottom:12 }}>↺</div>
-              <h2 style={{ fontSize:20, fontStyle:"italic", fontWeight:"normal", marginBottom:10 }}>Reset to defaults?</h2>
-              <p style={{ fontSize:14, color:"#888", lineHeight:1.5, marginBottom:24 }}>
-                This will clear all your current tasks and restore the original default tasks. Any tasks you've added will be lost.
-              </p>
-              <div style={{ display:"flex", gap:10 }}>
-                <button className="btn" onClick={() => setResetOpen(false)} style={{
-                  flex:1, padding:"13px", borderRadius:12, background:"#f0f0f0",
-                  color:"#666", fontSize:14, fontFamily:"inherit",
-                }}>Cancel</button>
-                <button className="btn" onClick={resetToDefaults} style={{
-                  flex:1, padding:"13px", borderRadius:12, background:"#E63946",
-                  color:"white", fontSize:14, fontFamily:"inherit", fontStyle:"italic",
-                }}>Yes, reset</button>
+        <div className="modal-overlay" onClick={e=>e.target.classList.contains("modal-overlay")&&setResetOpen(false)}>
+          <div className="modal-sheet">
+            <div style={{textAlign:"center",padding:"8px 0 24px"}}>
+              <div style={{fontSize:36,marginBottom:12}}>↺</div>
+              <h2 style={{fontSize:20,fontStyle:"italic",fontWeight:"normal",marginBottom:10}}>Reset to defaults?</h2>
+              <p style={{fontSize:14,color:"#888",lineHeight:1.6,marginBottom:24}}>This will clear all current tasks and restore the original defaults. Any tasks you have added will be lost.</p>
+              <div style={{display:"flex",gap:10}}>
+                <button className="btn" onClick={()=>setResetOpen(false)} style={{flex:1,padding:"13px",borderRadius:12,background:"#f0f0f0",color:"#666",fontSize:14,fontFamily:"inherit"}}>Cancel</button>
+                <button className="btn" onClick={resetToDefaults} style={{flex:1,padding:"13px",borderRadius:12,background:"#E63946",color:"white",fontSize:14,fontFamily:"inherit",fontStyle:"italic"}}>Yes, reset</button>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
-
-<!-- Service Worker registration -->
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(r => console.log('SW registered'))
-      .catch(e => console.log('SW failed', e));
-  });
+  window.addEventListener('load', function() { navigator.serviceWorker.register('/sw.js'); });
 }
 </script>
 </body>
