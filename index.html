@@ -1,363 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
   <title>Home Together</title>
-  <meta name="description" content="Household task tracker for couples" />
-  <meta name="theme-color" content="#1a1a1a" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Home Together" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <meta name="theme-color" content="#1a1a1a"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Home Together"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body, #root { height: 100%; }
-    body { font-family: Georgia, serif; background: #FAF7F2; color: #1a1a1a; -webkit-tap-highlight-color: transparent; }
-    @keyframes fall { to { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes toastIn { from { opacity:0; transform: translateX(-50%) translateY(12px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
-    .task-card { animation: slideDown 0.18s ease; }
-    .btn { cursor: pointer; border: none; transition: filter 0.15s; }
-    .btn:active { filter: brightness(0.88); }
-    .pill { cursor: pointer; transition: opacity 0.12s; }
-    .check-btn { cursor: pointer; }
-    input, select { outline: none; -webkit-appearance: none; appearance: none; }
-    .overdue-pulse { animation: pulse 1.8s ease-in-out infinite; }
-    ::-webkit-scrollbar { display: none; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: flex-end; justify-content: center; z-index: 100; }
-    .modal-sheet { background: white; border-radius: 22px 22px 0 0; padding: 26px 22px 36px; width: 100%; max-width: 640px; animation: slideUp 0.22s ease; max-height: 92vh; overflow-y: auto; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{min-height:100%;font-family:Georgia,serif;background:#FAF7F2;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
+    button{cursor:pointer;border:none;font-family:Georgia,serif}
+    button:active{filter:brightness(0.88)}
+    select,input{outline:none;-webkit-appearance:none;appearance:none;font-family:Georgia,serif}
+    ::-webkit-scrollbar{display:none}
+    @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .overdue-pulse{animation:pulse 1.8s ease-in-out infinite}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:flex-end;justify-content:center;z-index:100}
+    .modal-sheet{background:white;border-radius:22px 22px 0 0;padding:26px 22px 36px;width:100%;max-width:640px;animation:slideUp 0.22s ease;max-height:92vh;overflow-y:auto}
+    #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:11px 20px;border-radius:24px;font-size:13px;z-index:500;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.25);animation:toastIn 0.25s ease;display:none}
+    .task-card{background:white;border-radius:14px;padding:13px 14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);display:flex;align-items:center;gap:11px;margin-bottom:8px}
+    .task-card.done-card{background:#f5f5f5;box-shadow:none;opacity:0.55}
+    .task-card.overdue-card{box-shadow:0 0 0 1.5px #E6394633,0 2px 10px rgba(0,0,0,0.06)}
+    .check-btn{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;border:2px solid #d0d0d0}
+    .check-btn.checked{border-color:transparent}
+    .check-btn.overdue-check{border-color:#E63946}
+    .pill-btn{border-radius:18px;font-size:11px;padding:5px 12px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.5);white-space:nowrap}
+    .pill-btn.active{background:white;color:#1a1a1a;border-color:white}
+    .pill-btn.overdue-pill{color:#E63946;border-color:#E6394644}
+    .cat-pill{border-radius:18px;font-size:11px;padding:5px 11px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.4);white-space:nowrap}
+    .cat-pill.active{background:white;color:#1a1a1a;border-color:white}
+    .filter-bar{display:flex;gap:5px;overflow-x:auto;padding-bottom:12px;margin-top:13px}
+    .filter-bar::-webkit-scrollbar{display:none}
+    .form-input{padding:12px 14px;border-radius:11px;border:1.5px solid #e5e5e5;font-size:15px;width:100%;background:#fafafa}
+    .form-select{flex:1;padding:10px 11px;border-radius:10px;border:1.5px solid #e5e5e5;font-size:13px;background:#fafafa}
+    .due-quick-btn{padding:5px 11px;border-radius:16px;font-size:11px;background:#f0f0f0;color:#666;border:none}
+    .due-quick-btn.active{background:#1a1a1a;color:white}
+    .assign-btn{flex:1;padding:12px;border-radius:11px;font-size:14px;font-weight:600;border:none}
+    .big-btn{padding:14px;border-radius:13px;background:#1a1a1a;color:white;font-size:15px;font-style:italic;width:100%}
+    .fab{position:fixed;bottom:28px;right:22px;width:56px;height:56px;border-radius:50%;background:#1a1a1a;color:white;font-size:26px;box-shadow:0 4px 20px rgba(0,0,0,0.28);display:flex;align-items:center;justify-content:center;z-index:50}
+    .reset-btn{position:fixed;bottom:28px;left:22px;padding:0 16px;height:42px;border-radius:21px;background:#f0f0f0;color:#888;font-size:12px;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    .score-card{border-radius:10px;padding:8px 14px;text-align:center;min-width:62px}
   </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
 
-const PEOPLE = ["Sid", "Nikku"];
+<div id="app"></div>
+<div id="toast"></div>
+<div id="confetti-container" style="position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;display:none"></div>
+
+<script>
+const PEOPLE = ["Sid","Nikku"];
 const COLORS = {
-  Sid:   { bg: "#3B5BDB", light: "#E7F0FF", text: "#3B5BDB" },
-  Nikku: { bg: "#E64980", light: "#FFE8F0", text: "#E64980" },
+  Sid:   {bg:"#3B5BDB",light:"#E7F0FF",text:"#3B5BDB"},
+  Nikku: {bg:"#E64980",light:"#FFE8F0",text:"#E64980"},
 };
 const CATEGORIES = ["🍳 Kitchen","🧹 Cleaning","🛒 Shopping","🌿 Garden","🐾 Pets","📦 Admin","🔧 Repairs","Other"];
 const RECURRENCE = ["once","daily","weekly","monthly"];
 
-function getRecurrenceMs(r) {
-  return { once: null, daily: 86400000, weekly: 604800000, monthly: 2592000000 }[r];
+function getRecurrenceMs(r){return{once:null,daily:86400000,weekly:604800000,monthly:2592000000}[r];}
+function getDueLabel(dueAt){
+  if(!dueAt)return null;
+  const diff=dueAt-Date.now(), days=Math.ceil(diff/86400000);
+  if(days<0)  return{label:Math.abs(days)+"d overdue",color:"#E63946",urgent:true};
+  if(days===0)return{label:"Due today",color:"#FF6B35",urgent:true};
+  if(days===1)return{label:"Due tomorrow",color:"#F4A261",urgent:false};
+  return{label:"Due in "+days+"d",color:"#999",urgent:false};
 }
-function getDueLabel(dueAt) {
-  if (!dueAt) return null;
-  const diff = dueAt - Date.now();
-  const days = Math.ceil(diff / 86400000);
-  if (days < 0)   return { label: Math.abs(days) + "d overdue", color: "#E63946", urgent: true };
-  if (days === 0) return { label: "Due today",    color: "#FF6B35", urgent: true };
-  if (days === 1) return { label: "Due tomorrow", color: "#F4A261", urgent: false };
-  return { label: "Due in " + days + "d", color: "#999", urgent: false };
+function getAgeLabel(ts){
+  const d=Math.floor((Date.now()-ts)/86400000);
+  return d===0?"Today":d===1?"Yesterday":d+"d ago";
 }
-function getAgeLabel(ts) {
-  const d = Math.floor((Date.now() - ts) / 86400000);
-  if (d === 0) return "Today";
-  if (d === 1) return "Yesterday";
-  return d + "d ago";
+function dateStr(offset){return new Date(Date.now()+(offset||0)*86400000).toISOString().split("T")[0];}
+function nextWeekday(dow){
+  const t=new Date();let ahead=(dow-t.getDay()+7)%7;if(ahead===0)ahead=7;
+  return new Date(t.getFullYear(),t.getMonth(),t.getDate()+ahead,21,0,0).getTime();
 }
-function dateStr(offset) {
-  return new Date(Date.now() + (offset||0) * 86400000).toISOString().split("T")[0];
+function nextMonthDay(day){
+  const t=new Date();let d=new Date(t.getFullYear(),t.getMonth(),day,9,0,0);
+  if(d<=t)d=new Date(t.getFullYear(),t.getMonth()+1,day,9,0,0);return d.getTime();
 }
-function nextWeekday(dow) {
-  const t = new Date();
-  let ahead = (dow - t.getDay() + 7) % 7;
-  if (ahead === 0) ahead = 7;
-  return new Date(t.getFullYear(), t.getMonth(), t.getDate() + ahead, 21, 0, 0).getTime();
-}
-function nextMonthDay(day) {
-  const t = new Date();
-  let d = new Date(t.getFullYear(), t.getMonth(), day, 9, 0, 0);
-  if (d <= t) d = new Date(t.getFullYear(), t.getMonth() + 1, day, 9, 0, 0);
-  return d.getTime();
-}
-function loadTasks() {
-  try { return JSON.parse(localStorage.getItem("ht_tasks") || "null"); } catch(e) { return null; }
-}
-function saveTasks(t) {
-  try { localStorage.setItem("ht_tasks", JSON.stringify(t)); } catch(e) {}
-}
-function makeDefaults() {
-  return [
-    { id:1, title:"Do the dishes",      category:"🍳 Kitchen",  assignee:"Sid",   done:false, recurring:"daily",   createdAt:Date.now(), dueAt:Date.now()-3600000,                                lastReset:null },
-    { id:2, title:"Vacuum living room", category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:new Date(dateStr(3)+"T23:59:00").getTime(),         lastReset:null },
-    { id:3, title:"Buy groceries",      category:"🛒 Shopping", assignee:"Sid",   done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:new Date(dateStr(1)+"T23:59:00").getTime(),         lastReset:null },
-    { id:4, title:"Take out trash",     category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:nextWeekday(3),                                     lastReset:null },
-    { id:5, title:"Do the laundry",     category:"🧹 Cleaning", assignee:"Sid",   done:false, recurring:"weekly",  createdAt:Date.now(), dueAt:new Date(dateStr(7)+"T23:59:00").getTime(),         lastReset:null },
-    { id:6, title:"Clean the freezer",  category:"🍳 Kitchen",  assignee:"Nikku", done:false, recurring:"monthly", createdAt:Date.now(), dueAt:nextMonthDay(10),                                   lastReset:null },
+function loadTasks(){try{return JSON.parse(localStorage.getItem("ht_tasks")||"null");}catch(e){return null;}}
+function saveTasks(t){try{localStorage.setItem("ht_tasks",JSON.stringify(t));}catch(e){}}
+function makeDefaults(){
+  return[
+    {id:1,title:"Do the dishes",     category:"🍳 Kitchen", assignee:"Sid",  done:false,recurring:"daily",  createdAt:Date.now(),dueAt:Date.now()-3600000,                               lastReset:null},
+    {id:2,title:"Vacuum living room",category:"🧹 Cleaning",assignee:"Nikku",done:false,recurring:"weekly", createdAt:Date.now(),dueAt:new Date(dateStr(3)+"T23:59:00").getTime(),        lastReset:null},
+    {id:3,title:"Buy groceries",     category:"🛒 Shopping",assignee:"Sid",  done:false,recurring:"weekly", createdAt:Date.now(),dueAt:new Date(dateStr(1)+"T23:59:00").getTime(),        lastReset:null},
+    {id:4,title:"Take out trash",    category:"🧹 Cleaning",assignee:"Nikku",done:false,recurring:"weekly", createdAt:Date.now(),dueAt:nextWeekday(3),                                    lastReset:null},
+    {id:5,title:"Do the laundry",    category:"🧹 Cleaning",assignee:"Sid",  done:false,recurring:"weekly", createdAt:Date.now(),dueAt:new Date(dateStr(7)+"T23:59:00").getTime(),        lastReset:null},
+    {id:6,title:"Clean the freezer", category:"🍳 Kitchen", assignee:"Nikku",done:false,recurring:"monthly",createdAt:Date.now(),dueAt:nextMonthDay(10),                                  lastReset:null},
   ];
 }
 
-function App() {
-  const [tasks,       setTasks]       = useState(() => loadTasks() || makeDefaults());
-  const [filter,      setFilter]      = useState("All");
-  const [showDone,    setShowDone]    = useState(false);
-  const [addOpen,     setAddOpen]     = useState(false);
-  const [resetOpen,   setResetOpen]   = useState(false);
-  const [notifStatus, setNotifStatus] = useState("default");
-  const [form,        setForm]        = useState({ title:"", category:CATEGORIES[0], assignee:PEOPLE[0], recurring:"once", dueDate:"" });
-  const [nextId,      setNextId]      = useState(() => { const t = loadTasks(); return t ? Math.max(...t.map(x => x.id)) + 1 : 10; });
-  const [celebrate,   setCelebrate]   = useState(null);
-  const [toast,       setToast]       = useState(null);
-  const notifRef = useRef(null);
+// ---- STATE ----
+let tasks = loadTasks() || makeDefaults();
+let filter = "All";
+let showDone = false;
+let nextId = tasks.length ? Math.max(...tasks.map(t=>t.id))+1 : 10;
+let notifStatus = ("Notification" in window) ? Notification.permission : "denied";
+let addOpen = false;
+let resetOpen = false;
+let form = {title:"",category:CATEGORIES[0],assignee:PEOPLE[0],recurring:"once",dueDate:""};
 
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
-  useEffect(() => { if ("Notification" in window) setNotifStatus(Notification.permission); }, []);
-
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setTasks(prev => {
-        let changed = false;
-        const next = prev.map(task => {
-          if (!task.done || task.recurring === "once") return task;
-          const ms = getRecurrenceMs(task.recurring);
-          if (!ms) return task;
-          if (Date.now() >= (task.lastReset || task.createdAt) + ms) {
-            changed = true;
-            return { ...task, done: false, lastReset: Date.now(), dueAt: task.dueAt ? task.dueAt + ms : null };
-          }
-          return task;
-        });
-        return changed ? next : prev;
-      });
-    }, 30000);
-    return () => clearInterval(iv);
-  }, []);
-
-  useEffect(() => {
-    if (notifStatus !== "granted") return;
-    if (notifRef.current) clearInterval(notifRef.current);
-    const fire = () => tasks.filter(t => !t.done && t.dueAt && t.dueAt <= Date.now() + 86400000).forEach(task => {
-      const due = getDueLabel(task.dueAt);
-      if (due && due.urgent) new Notification("🏠 Home Together", { body: '"' + task.title + '" — ' + due.label + ' · ' + task.assignee, tag: "task-" + task.id });
-    });
-    fire();
-    notifRef.current = setInterval(fire, 3600000);
-    return () => clearInterval(notifRef.current);
-  }, [notifStatus, tasks]);
-
-  function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 3000); }
-
-  function requestNotifs() {
-    if (!("Notification" in window)) { showToast("Not supported"); return; }
-    Notification.requestPermission().then(p => {
-      setNotifStatus(p);
-      if (p === "granted") { showToast("🔔 Reminders enabled!"); new Notification("🏠 Home Together", { body: "You'll be reminded of due tasks!" }); }
-      else showToast("Blocked — check browser settings");
-    });
-  }
-
-  function toggleDone(id) {
-    setTasks(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      if (!t.done) { setCelebrate(id); setTimeout(() => setCelebrate(null), 1100); }
-      return { ...t, done: !t.done, lastReset: !t.done ? Date.now() : t.lastReset };
-    }));
-  }
-
-  function addTask() {
-    if (!form.title.trim()) return;
-    const dueAt = form.dueDate ? new Date(form.dueDate + "T23:59:00").getTime() : null;
-    setTasks(prev => [...prev, { ...form, id: nextId, done: false, createdAt: Date.now(), dueAt, lastReset: null }]);
-    setNextId(n => n + 1);
-    setForm({ title:"", category:CATEGORIES[0], assignee:PEOPLE[0], recurring:"once", dueDate:"" });
-    setAddOpen(false);
-    showToast("✅ Added for " + form.assignee);
-  }
-
-  function deleteTask(id) { setTasks(prev => prev.filter(t => t.id !== id)); }
-
-  function resetToDefaults() {
-    localStorage.removeItem("ht_tasks");
-    setTasks(makeDefaults());
-    setNextId(10);
-    setResetOpen(false);
-    showToast("✅ Reset to defaults!");
-  }
-
-  const pending = tasks.filter(t => !t.done);
-  const sidP    = pending.filter(t => t.assignee === "Sid").length;
-  const nikkuP  = pending.filter(t => t.assignee === "Nikku").length;
-  const overdue = pending.filter(t => t.dueAt && t.dueAt < Date.now()).length;
-  const score   = { Sid: tasks.filter(t => t.done && t.assignee==="Sid").length, Nikku: tasks.filter(t => t.done && t.assignee==="Nikku").length };
-
-  const filtered = tasks.filter(t => {
-    if (!showDone && t.done) return false;
-    if (filter === "All") return true;
-    if (filter === "Sid" || filter === "Nikku") return t.assignee === filter;
-    if (filter === "Overdue") return !t.done && t.dueAt && t.dueAt < Date.now();
-    return t.category === filter;
-  }).sort((a,b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    if (a.dueAt && b.dueAt) return a.dueAt - b.dueAt;
-    if (a.dueAt) return -1; if (b.dueAt) return 1;
-    return b.createdAt - a.createdAt;
-  });
-
-  return (
-    <div style={{minHeight:"100vh",background:"#FAF7F2"}}>
-
-      {celebrate && <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{[...Array(20)].map((_,i)=><div key={i} style={{position:"absolute",left:(10+Math.random()*80)+"%",top:"-12px",width:(6+Math.random()*8)+"px",height:(6+Math.random()*8)+"px",borderRadius:Math.random()>0.5?"50%":"2px",background:["#3B5BDB","#E64980","#FCC419","#51CF66","#FF6B35"][i%5],animation:"fall "+(0.7+Math.random()*0.6)+"s ease-in forwards",animationDelay:(Math.random()*0.25)+"s"}} />)}</div>}
-
-      {toast && <div style={{position:"fixed",bottom:28,left:"50%",transform:"translateX(-50%)",background:"#1a1a1a",color:"white",padding:"11px 20px",borderRadius:24,fontSize:13,zIndex:500,whiteSpace:"nowrap",animation:"toastIn 0.25s ease",boxShadow:"0 4px 20px rgba(0,0,0,0.25)"}}>{toast}</div>}
-
-      <div style={{background:"#1a1a1a",color:"white",padding:"16px 20px 0"}}>
-        <div style={{maxWidth:640,margin:"0 auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,flexWrap:"wrap"}}>
-            <div>
-              <div style={{fontSize:9,letterSpacing:"0.22em",textTransform:"uppercase",opacity:0.4,marginBottom:3}}>Household</div>
-              <h1 style={{fontSize:26,fontWeight:"normal",fontStyle:"italic"}}>Home Together</h1>
-              {overdue > 0 && <div className="overdue-pulse" style={{marginTop:5,fontSize:11,color:"#E63946"}}>⚠ {overdue} task{overdue>1?"s":""} overdue</div>}
-            </div>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
-              <button className="btn" onClick={requestNotifs} style={{padding:"5px 11px",borderRadius:14,fontSize:10,fontFamily:"inherit",background:notifStatus==="granted"?"#51CF6622":"#ffffff18",color:notifStatus==="granted"?"#51CF66":"rgba(255,255,255,0.55)",border:"1px solid "+(notifStatus==="granted"?"#51CF6644":"rgba(255,255,255,0.15)")}}>
-                {notifStatus==="granted"?"🔔 Reminders ON":notifStatus==="denied"?"🔕 Blocked":"🔔 Enable reminders"}
-              </button>
-              <div style={{display:"flex",gap:8}}>
-                {PEOPLE.map(p => (
-                  <div key={p} style={{background:COLORS[p].bg,borderRadius:10,padding:"8px 14px",textAlign:"center",minWidth:62}}>
-                    <div style={{fontSize:18,fontWeight:"bold",fontFamily:"monospace"}}>{pending.filter(t=>t.assignee===p).length}</div>
-                    <div style={{fontSize:9,opacity:0.85,letterSpacing:"0.1em"}}>{p.toUpperCase()}</div>
-                    <div style={{fontSize:9,opacity:0.55,marginTop:1}}>{score[p]} done ✓</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div style={{marginTop:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:9,opacity:0.3,marginBottom:4,letterSpacing:"0.1em"}}><span>SID — {sidP}</span><span>NIKKU — {nikkuP}</span></div>
-            <div style={{height:3,background:"#333",borderRadius:2,overflow:"hidden",display:"flex"}}>
-              {(sidP+nikkuP)>0 ? [<div key="s" style={{width:((sidP/(sidP+nikkuP))*100)+"%",background:COLORS.Sid.bg,transition:"width 0.4s"}} />,<div key="n" style={{flex:1,background:COLORS.Nikku.bg}} />] : <div style={{flex:1,background:"#51CF66"}} />}
-            </div>
-          </div>
-
-          <div style={{display:"flex",gap:5,marginTop:13,overflowX:"auto",paddingBottom:12}}>
-            {["All","Sid","Nikku"].concat(overdue>0?["Overdue"]:[]).map(f => (
-              <button key={f} className="pill" onClick={()=>setFilter(f)} style={{padding:"5px 12px",borderRadius:18,fontSize:11,fontFamily:"inherit",background:filter===f?"white":"transparent",color:filter===f?"#1a1a1a":f==="Overdue"?"#E63946":"rgba(255,255,255,0.5)",border:"1px solid "+(filter===f?"white":f==="Overdue"?"#E6394644":"rgba(255,255,255,0.15)"),whiteSpace:"nowrap"}}>
-                {f==="Sid"?"👤 Sid":f==="Nikku"?"💑 Nikku":f==="Overdue"?"⚠️ Overdue":f}
-              </button>
-            ))}
-            <div style={{width:1,background:"rgba(255,255,255,0.1)",margin:"0 2px"}} />
-            {CATEGORIES.slice(0,5).map(c => (
-              <button key={c} className="pill" onClick={()=>setFilter(c)} style={{padding:"5px 11px",borderRadius:18,fontSize:11,fontFamily:"inherit",background:filter===c?"white":"transparent",color:filter===c?"#1a1a1a":"rgba(255,255,255,0.4)",border:"1px solid "+(filter===c?"white":"rgba(255,255,255,0.1)"),whiteSpace:"nowrap"}}>{c}</button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div style={{maxWidth:640,margin:"0 auto",padding:"16px 18px 110px"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div style={{fontSize:12,color:"#bbb"}}>{filtered.filter(t=>!t.done).length} pending{showDone?", "+filtered.filter(t=>t.done).length+" done":""}</div>
-          <button className="pill" onClick={()=>setShowDone(v=>!v)} style={{padding:"4px 11px",borderRadius:16,fontSize:11,fontFamily:"inherit",background:showDone?"#e8e8e8":"transparent",color:"#999",border:"1px solid #e0e0e0"}}>{showDone?"Hide done":"Show done"}</button>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {filtered.length===0 && <div style={{textAlign:"center",padding:"52px 0",color:"#ccc"}}><div style={{fontSize:36,marginBottom:10}}>✨</div><div style={{fontSize:14}}>Nothing here!</div></div>}
-          {filtered.map(task => {
-            const due = getDueLabel(task.dueAt);
-            const isOvd = due && due.urgent && task.dueAt < Date.now();
-            const col = COLORS[task.assignee] || COLORS.Sid;
-            return (
-              <div key={task.id} className="task-card" style={{background:task.done?"#f5f5f5":"white",borderRadius:14,padding:"13px 14px",boxShadow:task.done?"none":isOvd?"0 0 0 1.5px #E6394633,0 2px 10px rgba(0,0,0,0.06)":"0 2px 10px rgba(0,0,0,0.06)",display:"flex",alignItems:"center",gap:11,opacity:task.done?0.55:1}}>
-                <button className="check-btn" onClick={()=>toggleDone(task.id)} style={{width:26,height:26,borderRadius:"50%",flexShrink:0,background:task.done?col.bg:"transparent",border:"2px solid "+(task.done?col.bg:isOvd?"#E63946":"#d0d0d0"),display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  {task.done && <span style={{color:"white",fontSize:12}}>✓</span>}
-                </button>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:14.5,fontWeight:500,textDecoration:task.done?"line-through":"none",marginBottom:3,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{task.title}</div>
-                  <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
-                    <span style={{fontSize:11,color:"#ccc"}}>{task.category}</span>
-                    {due && !task.done && <><span style={{color:"#ddd",fontSize:10}}>·</span><span style={{fontSize:11,color:due.color,fontWeight:due.urgent?600:400}}>{due.urgent?"⚡ ":""}{due.label}</span></>}
-                    {task.recurring!=="once" && <><span style={{color:"#ddd",fontSize:10}}>·</span><span style={{fontSize:10,background:"#f0f0f0",borderRadius:5,padding:"1px 6px",color:"#aaa"}}>🔁 {task.recurring}</span></>}
-                    {!due && <><span style={{color:"#ddd",fontSize:10}}>·</span><span style={{fontSize:11,color:"#ccc"}}>{getAgeLabel(task.createdAt)}</span></>}
-                  </div>
-                </div>
-                <div style={{background:col.light,color:col.text,borderRadius:8,padding:"3px 8px",fontSize:10,fontWeight:700,letterSpacing:"0.06em",flexShrink:0}}>{task.assignee.toUpperCase()}</div>
-                <button className="btn" onClick={()=>deleteTask(task.id)} style={{width:22,height:22,borderRadius:"50%",background:"transparent",color:"#ccc",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,padding:0}}>×</button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <button className="btn" onClick={()=>setAddOpen(true)} style={{position:"fixed",bottom:28,right:22,width:56,height:56,borderRadius:"50%",background:"#1a1a1a",color:"white",fontSize:26,boxShadow:"0 4px 20px rgba(0,0,0,0.28)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:50}}>+</button>
-      <button className="btn" onClick={()=>setResetOpen(true)} style={{position:"fixed",bottom:28,left:22,padding:"0 16px",height:42,borderRadius:21,background:"#f0f0f0",color:"#888",fontSize:12,fontFamily:"inherit",zIndex:50,boxShadow:"0 2px 10px rgba(0,0,0,0.1)"}}>↺ Reset</button>
-
-      {addOpen && (
-        <div className="modal-overlay" onClick={e=>e.target.classList.contains("modal-overlay")&&setAddOpen(false)}>
-          <div className="modal-sheet">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22}}>
-              <h2 style={{fontSize:19,fontStyle:"italic",fontWeight:"normal"}}>New task</h2>
-              <button className="btn" onClick={()=>setAddOpen(false)} style={{background:"#f0f0f0",borderRadius:"50%",width:30,height:30,fontSize:17,color:"#888"}}>×</button>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              <input placeholder="What needs doing?" value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addTask()} autoFocus style={{padding:"12px 14px",borderRadius:11,border:"1.5px solid #e5e5e5",fontSize:15,fontFamily:"inherit",background:"#fafafa"}} />
-              <div style={{display:"flex",gap:9}}>
-                <select value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} style={{flex:1,padding:"10px 11px",borderRadius:10,border:"1.5px solid #e5e5e5",fontSize:13,fontFamily:"inherit",background:"#fafafa"}}>
-                  {CATEGORIES.map(c=><option key={c}>{c}</option>)}
-                </select>
-                <select value={form.recurring} onChange={e=>setForm(f=>({...f,recurring:e.target.value}))} style={{flex:1,padding:"10px 11px",borderRadius:10,border:"1.5px solid #e5e5e5",fontSize:13,fontFamily:"inherit",background:"#fafafa"}}>
-                  {RECURRENCE.map(r=><option key={r}>{r}</option>)}
-                </select>
-              </div>
-              <div>
-                <div style={{fontSize:11,color:"#bbb",marginBottom:6,letterSpacing:"0.08em"}}>DUE DATE (optional)</div>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {[{l:"Today",v:dateStr(0)},{l:"Tomorrow",v:dateStr(1)},{l:"In 3 days",v:dateStr(3)},{l:"In a week",v:dateStr(7)}].map(o=>(
-                    <button key={o.v} className="pill" onClick={()=>setForm(f=>({...f,dueDate:f.dueDate===o.v?"":o.v}))} style={{padding:"5px 11px",borderRadius:16,fontSize:11,fontFamily:"inherit",background:form.dueDate===o.v?"#1a1a1a":"#f0f0f0",color:form.dueDate===o.v?"white":"#666",border:"none"}}>{o.l}</button>
-                  ))}
-                  <input type="date" value={form.dueDate} onChange={e=>setForm(f=>({...f,dueDate:e.target.value}))} style={{flex:1,minWidth:110,padding:"5px 10px",borderRadius:10,border:"1.5px solid #e5e5e5",fontSize:12,fontFamily:"inherit",background:"#fafafa"}} />
-                </div>
-              </div>
-              <div>
-                <div style={{fontSize:11,color:"#bbb",marginBottom:6,letterSpacing:"0.08em"}}>ASSIGN TO</div>
-                <div style={{display:"flex",gap:8}}>
-                  {PEOPLE.map(p=>(
-                    <button key={p} className="btn" onClick={()=>setForm(f=>({...f,assignee:p}))} style={{flex:1,padding:"12px",borderRadius:11,fontSize:14,fontFamily:"inherit",fontWeight:600,background:form.assignee===p?COLORS[p].bg:COLORS[p].light,color:form.assignee===p?"white":COLORS[p].text,border:"none"}}>{p}</button>
-                  ))}
-                </div>
-              </div>
-              {form.recurring!=="once" && <div style={{background:"#f8f4ff",borderRadius:10,padding:"10px 13px",fontSize:12,color:"#7c4dde",borderLeft:"3px solid #c084fc"}}>🔁 Resets every {form.recurring} after being marked done.</div>}
-              <button className="btn" onClick={addTask} style={{padding:"14px",borderRadius:13,background:"#1a1a1a",color:"white",fontSize:15,fontFamily:"inherit",fontStyle:"italic"}}>Add task →</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {resetOpen && (
-        <div className="modal-overlay" onClick={e=>e.target.classList.contains("modal-overlay")&&setResetOpen(false)}>
-          <div className="modal-sheet">
-            <div style={{textAlign:"center",padding:"8px 0 24px"}}>
-              <div style={{fontSize:36,marginBottom:12}}>↺</div>
-              <h2 style={{fontSize:20,fontStyle:"italic",fontWeight:"normal",marginBottom:10}}>Reset to defaults?</h2>
-              <p style={{fontSize:14,color:"#888",lineHeight:1.6,marginBottom:24}}>This will clear all current tasks and restore the original defaults. Any tasks you have added will be lost.</p>
-              <div style={{display:"flex",gap:10}}>
-                <button className="btn" onClick={()=>setResetOpen(false)} style={{flex:1,padding:"13px",borderRadius:12,background:"#f0f0f0",color:"#666",fontSize:14,fontFamily:"inherit"}}>Cancel</button>
-                <button className="btn" onClick={resetToDefaults} style={{flex:1,padding:"13px",borderRadius:12,background:"#E63946",color:"white",fontSize:14,fontFamily:"inherit",fontStyle:"italic"}}>Yes, reset</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+// ---- TOAST ----
+let toastTimer;
+function showToast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg;el.style.display="block";
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.display="none";},3000);
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() { navigator.serviceWorker.register('/sw.js'); });
+// ---- CONFETTI ----
+function celebrate(){
+  const c=document.getElementById("confetti-container");
+  c.style.display="block";c.innerHTML="";
+  const colors=["#3B5BDB","#E64980","#FCC419","#51CF66","#FF6B35"];
+  for(let i=0;i<20;i++){
+    const d=document.createElement("div");
+    const size=6+Math.random()*8;
+    d.style.cssText="position:absolute;top:-12px;border-radius:"+(Math.random()>0.5?"50%":"2px")+";width:"+size+"px;height:"+size+"px;left:"+(10+Math.random()*80)+"%;background:"+colors[i%5]+";animation:fall "+(0.7+Math.random()*0.6)+"s ease-in forwards;animation-delay:"+(Math.random()*0.25)+"s";
+    c.appendChild(d);
+  }
+  setTimeout(()=>{c.style.display="none";},1500);
+}
+
+// ---- AUTO RESET ----
+setInterval(()=>{
+  let changed=false;
+  tasks=tasks.map(task=>{
+    if(!task.done||task.recurring==="once")return task;
+    const ms=getRecurrenceMs(task.recurring);if(!ms)return task;
+    if(Date.now()>=(task.lastReset||task.createdAt)+ms){
+      changed=true;
+      return{...task,done:false,lastReset:Date.now(),dueAt:task.dueAt?task.dueAt+ms:null};
+    }
+    return task;
+  });
+  if(changed){saveTasks(tasks);render();}
+},30000);
+
+// ---- NOTIFICATIONS ----
+function fireNotifs(){
+  if(notifStatus!=="granted")return;
+  tasks.filter(t=>!t.done&&t.dueAt&&t.dueAt<=Date.now()+86400000).forEach(task=>{
+    const due=getDueLabel(task.dueAt);
+    if(due&&due.urgent)new Notification("🏠 Home Together",{body:'"'+task.title+'" — '+due.label+' · '+task.assignee,tag:"task-"+task.id});
+  });
+}
+setInterval(fireNotifs,3600000);
+
+function requestNotifs(){
+  if(!("Notification"in window)){showToast("Not supported in this browser");return;}
+  Notification.requestPermission().then(p=>{
+    notifStatus=p;
+    if(p==="granted"){showToast("🔔 Reminders enabled!");new Notification("🏠 Home Together",{body:"You'll be reminded of due tasks!"});}
+    else showToast("Blocked — enable in browser settings");
+    render();
+  });
+}
+
+// ---- ACTIONS ----
+function toggleDone(id){
+  tasks=tasks.map(t=>{
+    if(t.id!==id)return t;
+    if(!t.done)celebrate();
+    return{...t,done:!t.done,lastReset:!t.done?Date.now():t.lastReset};
+  });
+  saveTasks(tasks);render();
+}
+function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);saveTasks(tasks);render();}
+function addTask(){
+  if(!form.title.trim())return;
+  const dueAt=form.dueDate?new Date(form.dueDate+"T23:59:00").getTime():null;
+  tasks.push({...form,id:nextId++,done:false,createdAt:Date.now(),dueAt,lastReset:null});
+  saveTasks(tasks);
+  showToast("✅ Added for "+form.assignee);
+  form={title:"",category:CATEGORIES[0],assignee:PEOPLE[0],recurring:"once",dueDate:""};
+  addOpen=false;render();
+}
+function resetToDefaults(){
+  localStorage.removeItem("ht_tasks");
+  tasks=makeDefaults();nextId=10;
+  saveTasks(tasks);resetOpen=false;
+  showToast("✅ Reset to defaults!");render();
+}
+
+// ---- RENDER ----
+function h(tag,attrs,children){
+  const el=document.createElement(tag);
+  for(const[k,v]of Object.entries(attrs||{})){
+    if(k==="style"&&typeof v==="object"){Object.assign(el.style,v);}
+    else if(k.startsWith("on")){el.addEventListener(k.slice(2).toLowerCase(),v);}
+    else el.setAttribute(k,v);
+  }
+  for(const child of [].concat(children||[])){
+    if(child==null)continue;
+    el.appendChild(typeof child==="string"?document.createTextNode(child):child);
+  }
+  return el;
+}
+function div(attrs,children){return h("div",attrs,children);}
+function btn(attrs,children){return h("button",attrs,children);}
+function span(style,text){return h("span",{style},text);}
+
+function render(){
+  const pending=tasks.filter(t=>!t.done);
+  const sidP=pending.filter(t=>t.assignee==="Sid").length;
+  const nikkuP=pending.filter(t=>t.assignee==="Nikku").length;
+  const overdue=pending.filter(t=>t.dueAt&&t.dueAt<Date.now()).length;
+  const score={Sid:tasks.filter(t=>t.done&&t.assignee==="Sid").length,Nikku:tasks.filter(t=>t.done&&t.assignee==="Nikku").length};
+
+  const filtered=tasks.filter(t=>{
+    if(!showDone&&t.done)return false;
+    if(filter==="All")return true;
+    if(filter==="Sid"||filter==="Nikku")return t.assignee===filter;
+    if(filter==="Overdue")return !t.done&&t.dueAt&&t.dueAt<Date.now();
+    return t.category===filter;
+  }).sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    if(a.dueAt&&b.dueAt)return a.dueAt-b.dueAt;
+    if(a.dueAt)return -1;if(b.dueAt)return 1;
+    return b.createdAt-a.createdAt;
+  });
+
+  // HEADER
+  const notifBtnText=notifStatus==="granted"?"🔔 ON":notifStatus==="denied"?"🔕 Blocked":"🔔 Reminders";
+  const notifBtnStyle={padding:"5px 11px",borderRadius:"14px",fontSize:"10px",background:notifStatus==="granted"?"#51CF6622":"#ffffff18",color:notifStatus==="granted"?"#51CF66":"rgba(255,255,255,0.55)",border:"1px solid "+(notifStatus==="granted"?"#51CF6644":"rgba(255,255,255,0.15)")};
+
+  const scoreCards=PEOPLE.map(p=>div({style:{background:COLORS[p].bg,borderRadius:"10px",padding:"8px 14px",textAlign:"center",minWidth:"62px"}},[
+    div({style:{fontSize:"18px",fontWeight:"bold",fontFamily:"monospace"}},[String(pending.filter(t=>t.assignee===p).length)]),
+    div({style:{fontSize:"9px",opacity:"0.85",letterSpacing:"0.1em"}},[p.toUpperCase()]),
+    div({style:{fontSize:"9px",opacity:"0.55",marginTop:"1px"}},[score[p]+" done ✓"]),
+  ]));
+
+  const total=sidP+nikkuP;
+  const barInner=total>0
+    ?[div({style:{width:((sidP/total)*100)+"%",background:COLORS.Sid.bg,height:"100%",transition:"width 0.4s"}},[]),
+      div({style:{flex:"1",background:COLORS.Nikku.bg,height:"100%"}},[]) ]
+    :[div({style:{flex:"1",background:"#51CF66",height:"100%"}},[])];
+
+  const filters=["All","Sid","Nikku"].concat(overdue>0?["Overdue"]:[]);
+  const filterBtns=filters.map(f=>{
+    const isOverdue=f==="Overdue";
+    const active=filter===f;
+    const label=f==="Sid"?"👤 Sid":f==="Nikku"?"💑 Nikku":f==="Overdue"?"⚠️ Overdue":f;
+    const b=btn({class:"pill-btn"+(active?" active":isOverdue?" overdue-pill":""),onClick:()=>{filter=f;render();}},label);
+    return b;
+  });
+  const catBtns=CATEGORIES.slice(0,5).map(c=>btn({class:"cat-pill"+(filter===c?" active":""),onClick:()=>{filter=c;render();}},c));
+
+  const header=div({style:{background:"#1a1a1a",color:"white",padding:"16px 20px 0"}},[
+    div({style:{maxWidth:"640px",margin:"0 auto"}},[
+      div({style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:"10px",flexWrap:"wrap"}},[
+        div({},[
+          div({style:{fontSize:"9px",letterSpacing:"0.22em",textTransform:"uppercase",opacity:"0.4",marginBottom:"3px"}},["Household"]),
+          h("h1",{style:{fontSize:"26px",fontWeight:"normal",fontStyle:"italic"}},["Home Together"]),
+          overdue>0?div({class:"overdue-pulse",style:{marginTop:"5px",fontSize:"11px",color:"#E63946"}},["⚠ "+overdue+" task"+(overdue>1?"s":"")+" overdue"]):null,
+        ]),
+        div({style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"8px"}},[
+          btn({style:notifBtnStyle,onClick:requestNotifs},[notifBtnText]),
+          div({style:{display:"flex",gap:"8px"}},scoreCards),
+        ]),
+      ]),
+      div({style:{marginTop:"14px"}},[
+        div({style:{display:"flex",justifyContent:"space-between",fontSize:"9px",opacity:"0.3",marginBottom:"4px",letterSpacing:"0.1em"}},["SID — "+sidP,div({},"NIKKU — "+nikkuP)]),
+        div({style:{height:"3px",background:"#333",borderRadius:"2px",overflow:"hidden",display:"flex"}},barInner),
+      ]),
+      div({class:"filter-bar"},filterBtns.concat([div({style:{width:"1px",background:"rgba(255,255,255,0.1)",margin:"0 2px"}},[])]).concat(catBtns)),
+    ]),
+  ]);
+
+  // TASK LIST
+  const pendingCount=filtered.filter(t=>!t.done).length;
+  const doneCount=filtered.filter(t=>t.done).length;
+  const controls=div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}},[
+    span({fontSize:"12px",color:"#bbb"},pendingCount+" pending"+(showDone?", "+doneCount+" done":"")),
+    btn({style:{padding:"4px 11px",borderRadius:"16px",fontSize:"11px",background:showDone?"#e8e8e8":"transparent",color:"#999",border:"1px solid #e0e0e0"},onClick:()=>{showDone=!showDone;render();}},showDone?"Hide done":"Show done"),
+  ]);
+
+  const taskCards=filtered.length===0
+    ?[div({style:{textAlign:"center",padding:"52px 0",color:"#ccc"}},[div({style:{fontSize:"36px",marginBottom:"10px"}},"✨"),div({style:{fontSize:"14px"}},"Nothing here!")])]
+    :filtered.map(task=>{
+      const due=getDueLabel(task.dueAt);
+      const isOvd=due&&due.urgent&&task.dueAt<Date.now();
+      const col=COLORS[task.assignee]||COLORS.Sid;
+      const card=div({class:"task-card"+(task.done?" done-card":isOvd?" overdue-card":"")},[
+        btn({class:"check-btn"+(task.done?" checked":isOvd?" overdue-check":""),style:{background:task.done?col.bg:"transparent",borderColor:task.done?col.bg:isOvd?"#E63946":"#d0d0d0"},onClick:()=>toggleDone(task.id)},
+          task.done?[span({color:"white",fontSize:"12px"},"✓")]:[]
+        ),
+        div({style:{flex:"1",minWidth:"0"}},[
+          div({style:{fontSize:"14.5px",fontWeight:"500",textDecoration:task.done?"line-through":"none",marginBottom:"3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},[task.title]),
+          div({style:{display:"flex",gap:"5px",flexWrap:"wrap",alignItems:"center"}},[
+            span({fontSize:"11px",color:"#ccc"},task.category),
+            due&&!task.done?span({fontSize:"11px",color:due.color,fontWeight:due.urgent?"600":"400"}," · "+(due.urgent?"⚡ ":"")+due.label):null,
+            task.recurring!=="once"?span({fontSize:"10px",background:"#f0f0f0",borderRadius:"5px",padding:"1px 6px",color:"#aaa"}," · 🔁 "+task.recurring):null,
+            !due?span({fontSize:"11px",color:"#ccc"}," · "+getAgeLabel(task.createdAt)):null,
+          ]),
+        ]),
+        div({style:{background:col.light,color:col.text,borderRadius:"8px",padding:"3px 8px",fontSize:"10px",fontWeight:"700",letterSpacing:"0.06em",flexShrink:"0"}},[task.assignee.toUpperCase()]),
+        btn({style:{width:"22px",height:"22px",borderRadius:"50%",background:"transparent",color:"#ccc",fontSize:"15px",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:"0",padding:"0"},onClick:()=>deleteTask(task.id)},["×"]),
+      ]);
+      return card;
+    });
+
+  const taskList=div({style:{maxWidth:"640px",margin:"0 auto",padding:"16px 18px 110px"}},[controls,div({},taskCards)]);
+
+  // FAB + RESET
+  const fab=btn({class:"fab",onClick:()=>{addOpen=true;render();}},["+"] );
+  const resetBtnEl=btn({class:"reset-btn",onClick:()=>{resetOpen=true;render();}},"↺ Reset");
+
+  // ADD MODAL
+  let addModal=null;
+  if(addOpen){
+    const formEl=div({style:{display:"flex",flexDirection:"column",gap:"12px"}},[
+      h("input",{class:"form-input",placeholder:"What needs doing?",value:form.title,
+        onInput:e=>{form.title=e.target.value;},
+        onKeydown:e=>{if(e.key==="Enter")addTask();}
+      }),
+      div({style:{display:"flex",gap:"9px"}},[
+        h("select",{class:"form-select",onChange:e=>{form.category=e.target.value;}},
+          CATEGORIES.map(c=>{ const o=h("option",{value:c},[c]); if(c===form.category)o.selected=true; return o; })
+        ),
+        h("select",{class:"form-select",onChange:e=>{form.recurring=e.target.value;render();}},
+          RECURRENCE.map(r=>{ const o=h("option",{value:r},[r]); if(r===form.recurring)o.selected=true; return o; })
+        ),
+      ]),
+      div({},[
+        div({style:{fontSize:"11px",color:"#bbb",marginBottom:"6px",letterSpacing:"0.08em"}},["DUE DATE (optional)"]),
+        div({style:{display:"flex",gap:"6px",flexWrap:"wrap"}},[
+          ...[{l:"Today",v:dateStr(0)},{l:"Tomorrow",v:dateStr(1)},{l:"In 3 days",v:dateStr(3)},{l:"In a week",v:dateStr(7)}].map(o=>
+            btn({class:"due-quick-btn"+(form.dueDate===o.v?" active":""),onClick:()=>{form.dueDate=form.dueDate===o.v?"":o.v;render();}},[o.l])
+          ),
+          h("input",{type:"date",value:form.dueDate,style:{flex:"1",minWidth:"110px",padding:"5px 10px",borderRadius:"10px",border:"1.5px solid #e5e5e5",fontSize:"12px",background:"#fafafa"},onChange:e=>{form.dueDate=e.target.value;render();}}),
+        ]),
+      ]),
+      div({},[
+        div({style:{fontSize:"11px",color:"#bbb",marginBottom:"6px",letterSpacing:"0.08em"}},["ASSIGN TO"]),
+        div({style:{display:"flex",gap:"8px"}},PEOPLE.map(p=>
+          btn({class:"assign-btn",style:{background:form.assignee===p?COLORS[p].bg:COLORS[p].light,color:form.assignee===p?"white":COLORS[p].text},onClick:()=>{form.assignee=p;render();}},[p])
+        )),
+      ]),
+      form.recurring!=="once"?div({style:{background:"#f8f4ff",borderRadius:"10px",padding:"10px 13px",fontSize:"12px",color:"#7c4dde",borderLeft:"3px solid #c084fc"}},["🔁 Resets every "+form.recurring+" after being marked done."]):null,
+      btn({class:"big-btn",onClick:addTask},["Add task →"]),
+    ]);
+    addModal=div({class:"modal-overlay",onClick:e=>{if(e.target.classList.contains("modal-overlay")){addOpen=false;render();} }},[
+      div({class:"modal-sheet"},[
+        div({style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"22px"}},[
+          h("h2",{style:{fontSize:"19px",fontStyle:"italic",fontWeight:"normal"}},["New task"]),
+          btn({style:{background:"#f0f0f0",borderRadius:"50%",width:"30px",height:"30px",fontSize:"17px",color:"#888"},onClick:()=>{addOpen=false;render();}},["×"]),
+        ]),
+        formEl,
+      ]),
+    ]);
+  }
+
+  // RESET MODAL
+  let resetModal=null;
+  if(resetOpen){
+    resetModal=div({class:"modal-overlay",onClick:e=>{if(e.target.classList.contains("modal-overlay")){resetOpen=false;render();} }},[
+      div({class:"modal-sheet"},[
+        div({style:{textAlign:"center",padding:"8px 0 24px"}},[
+          div({style:{fontSize:"36px",marginBottom:"12px"}},["↺"]),
+          h("h2",{style:{fontSize:"20px",fontStyle:"italic",fontWeight:"normal",marginBottom:"10px"}},["Reset to defaults?"]),
+          h("p",{style:{fontSize:"14px",color:"#888",lineHeight:"1.6",marginBottom:"24px"}},["This will clear all current tasks and restore the original defaults. Any tasks you have added will be lost."]),
+          div({style:{display:"flex",gap:"10px"}},[
+            btn({style:{flex:"1",padding:"13px",borderRadius:"12px",background:"#f0f0f0",color:"#666",fontSize:"14px"},onClick:()=>{resetOpen=false;render();}},["Cancel"]),
+            btn({style:{flex:"1",padding:"13px",borderRadius:"12px",background:"#E63946",color:"white",fontSize:"14px",fontStyle:"italic"},onClick:resetToDefaults},["Yes, reset"]),
+          ]),
+        ]),
+      ]),
+    ]);
+  }
+
+  const app=document.getElementById("app");
+  app.innerHTML="";
+  app.appendChild(header);
+  app.appendChild(taskList);
+  app.appendChild(fab);
+  app.appendChild(resetBtnEl);
+  if(addModal)app.appendChild(addModal);
+  if(resetModal)app.appendChild(resetModal);
+}
+
+render();
+
+if('serviceWorker'in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
 }
 </script>
 </body>
