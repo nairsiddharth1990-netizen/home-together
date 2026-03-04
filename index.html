@@ -48,7 +48,7 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-const PEOPLE = ["You", "Wife"];
+const PEOPLE = ["Sid", "Nikku"];
 const COLORS = {
   You:  { bg: "#3B5BDB", light: "#E7F0FF", text: "#3B5BDB" },
   Wife: { bg: "#E64980", light: "#FFE8F0", text: "#E64980" },
@@ -82,11 +82,29 @@ function saveTasks(tasks) {
   try { localStorage.setItem("ht_tasks", JSON.stringify(tasks)); } catch {}
 }
 
+function nextWeekday(dayOfWeek) {
+  // dayOfWeek: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+  const today = new Date();
+  const todayDay = today.getDay();
+  let daysAhead = (dayOfWeek - todayDay + 7) % 7;
+  if (daysAhead === 0) daysAhead = 7;
+  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysAhead, 21, 0, 0);
+  return d.getTime();
+}
+function nextMonthDay(day) {
+  const today = new Date();
+  let d = new Date(today.getFullYear(), today.getMonth(), day, 9, 0, 0);
+  if (d <= today) d = new Date(today.getFullYear(), today.getMonth() + 1, day, 9, 0, 0);
+  return d.getTime();
+}
+
 const DEFAULT_TASKS = [
-  { id:1, title:"Do the dishes",      category:"🍳 Kitchen", assignee:"You",  done:false, recurring:"daily",  createdAt:Date.now()-86400000, dueAt:Date.now()-3600000, lastReset:null },
-  { id:2, title:"Vacuum living room", category:"🧹 Cleaning", assignee:"Wife", done:false, recurring:"weekly", createdAt:Date.now()-172800000,dueAt:new Date(dateStr(3)+"T23:59:00").getTime(), lastReset:null },
-  { id:3, title:"Buy groceries",      category:"🛒 Shopping", assignee:"You",  done:true,  recurring:"weekly", createdAt:Date.now()-259200000,dueAt:new Date(dateStr(1)+"T23:59:00").getTime(), lastReset:null },
-  { id:4, title:"Take out trash",     category:"🧹 Cleaning", assignee:"Wife", done:false, recurring:"weekly", createdAt:Date.now(),           dueAt:new Date(dateStr(7)+"T23:59:00").getTime(), lastReset:null },
+  { id:1, title:"Do the dishes",      category:"🍳 Kitchen",  assignee:"Sid",   done:false, recurring:"daily",   createdAt:Date.now()-86400000,  dueAt:Date.now()-3600000, lastReset:null },
+  { id:2, title:"Vacuum living room", category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now()-172800000, dueAt:new Date(dateStr(3)+"T23:59:00").getTime(), lastReset:null },
+  { id:3, title:"Buy groceries",      category:"🛒 Shopping", assignee:"Sid",   done:true,  recurring:"weekly",  createdAt:Date.now()-259200000, dueAt:new Date(dateStr(1)+"T23:59:00").getTime(), lastReset:null },
+  { id:4, title:"Take out trash",     category:"🧹 Cleaning", assignee:"Nikku", done:false, recurring:"weekly",  createdAt:Date.now(),           dueAt:nextWeekday(3), lastReset:null },
+  { id:5, title:"Do the laundry",     category:"🧹 Cleaning", assignee:"Sid",   done:false, recurring:"weekly",  createdAt:Date.now(),           dueAt:new Date(dateStr(7)+"T23:59:00").getTime(), lastReset:null },
+  { id:6, title:"Clean the freezer",  category:"🍳 Kitchen",  assignee:"Nikku", done:false, recurring:"monthly", createdAt:Date.now(),           dueAt:nextMonthDay(10), lastReset:null },
 ];
 
 function App() {
@@ -185,16 +203,16 @@ function App() {
   function deleteTask(id) { setTasks(prev => prev.filter(t => t.id !== id)); }
 
   const pending   = tasks.filter(t => !t.done);
-  const youP      = pending.filter(t => t.assignee === "You").length;
-  const wifeP     = pending.filter(t => t.assignee === "Wife").length;
+  const youP      = pending.filter(t => t.assignee === "Sid").length;
+  const wifeP     = pending.filter(t => t.assignee === "Nikku").length;
   const overdue   = pending.filter(t => t.dueAt && t.dueAt < Date.now()).length;
-  const score     = { You: tasks.filter(t=>t.done&&t.assignee==="You").length, Wife: tasks.filter(t=>t.done&&t.assignee==="Wife").length };
+  const score     = { You: tasks.filter(t=>t.done&&t.assignee==="Sid").length, Wife: tasks.filter(t=>t.done&&t.assignee==="Nikku").length };
 
   const filtered = tasks
     .filter(t => {
       if (!showDone && t.done) return false;
       if (filter === "All") return true;
-      if (filter === "You" || filter === "Wife") return t.assignee === filter;
+      if (filter === "Sid" || filter === "Nikku") return t.assignee === filter;
       if (filter === "⚠️ Overdue") return !t.done && t.dueAt && t.dueAt < Date.now();
       return t.category === filter;
     })
@@ -272,7 +290,7 @@ function App() {
           {/* Balance bar */}
           <div style={{ marginTop:14 }}>
             <div style={{ display:"flex", justifyContent:"space-between", fontSize:9, opacity:0.3, marginBottom:4, letterSpacing:"0.1em" }}>
-              <span>YOU — {youP}</span><span>WIFE — {wifeP}</span>
+              <span>SID — {youP}</span><span>NIKKU — {wifeP}</span>
             </div>
             <div style={{ height:3, background:"#333", borderRadius:2, overflow:"hidden", display:"flex" }}>
               {(youP+wifeP)>0 ? (
@@ -283,14 +301,14 @@ function App() {
 
           {/* Filter pills */}
           <div style={{ display:"flex", gap:5, marginTop:13, overflowX:"auto", paddingBottom:12, scrollbarWidth:"none" }}>
-            {["All","You","Wife", overdue>0?"⚠️ Overdue":null].filter(Boolean).map(f => (
+            {["All","Sid","Nikku", overdue>0?"⚠️ Overdue":null].filter(Boolean).map(f => (
               <button key={f} className="pill" onClick={() => setFilter(f)} style={{
                 padding:"5px 12px", borderRadius:18, fontSize:11, fontFamily:"inherit",
                 background: filter===f?"white":"transparent",
                 color: filter===f?"#1a1a1a": f==="⚠️ Overdue"?"#E63946":"rgba(255,255,255,0.5)",
                 border:`1px solid ${filter===f?"white":f==="⚠️ Overdue"?"#E6394644":"rgba(255,255,255,0.15)"}`,
                 whiteSpace:"nowrap",
-              }}>{f==="You"?"👤 Yours":f==="Wife"?"💑 Wife's":f}</button>
+              }}>{f==="Sid"?"👤 Sid":f==="Nikku"?"💑 Nikku's":f}</button>
             ))}
             <div style={{ width:1, background:"rgba(255,255,255,0.1)", margin:"0 2px" }} />
             {CATEGORIES.slice(0,5).map(c => (
